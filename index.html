@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>THOTHEAUPHIS MERKABA</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/astronomy-engine/astronomy.browser.min.js"></script>
+<style>
+:root {
+  --bg: #0a0a0f;
+  --bg2: #12121a;
+  --bg3: #1a1a28;
+  --fg: #c8c4d4;
+  --fg2: #8880a0;
+  --accent: #b8860b;
+  --accent2: #d4a017;
+  --scorpio: #8b0000;
+  --gemini: #daa520;
+  --aspect-conj: #ff4444;
+  --aspect-opp: #4488ff;
+  --aspect-tri: #44cc44;
+  --aspect-squ: #ff8844;
+  --aspect-sex: #44ccaa;
+  --aspect-none: #444;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--fg); min-height: 100vh; }
+#header {
+  background: linear-gradient(135deg, #0a0a0f 0%, #1a0a0a 50%, #0a0a1a 100%);
+  border-bottom: 1px solid #b8860b33;
+  padding: 12px 20px;
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+}
+#header h1 { font-size: 16px; font-weight: 300; letter-spacing: 6px; text-transform: uppercase; color: var(--accent); }
+#header .subtitle { font-size: 11px; color: var(--fg2); letter-spacing: 2px; }
+#header .spacer { flex: 1; }
+.date-controls { display: flex; align-items: center; gap: 12px; }
+.date-controls label { font-size: 11px; color: var(--fg2); letter-spacing: 1px; }
+.date-controls input[type="date"] {
+  background: var(--bg2); border: 1px solid #333; color: var(--fg); padding: 4px 10px;
+  font-size: 13px; border-radius: 4px; font-family: inherit;
+}
+.date-controls input[type="range"] { width: 180px; accent-color: var(--accent); }
+#date-display { font-size: 14px; color: var(--accent); font-weight: 600; min-width: 60px; text-align: center; }
+#main { display: flex; flex-direction: row; height: calc(100vh - 56px); }
+#map-container { flex: 1; position: relative; min-height: 400px; }
+#map { width: 100%; height: 100%; }
+#panel {
+  width: 400px; background: var(--bg2); border-left: 1px solid #1a1a2a;
+  overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 16px;
+}
+.panel-section { background: var(--bg3); border-radius: 8px; padding: 12px; border: 1px solid #222; }
+.panel-section h3 { font-size: 11px; text-transform: uppercase; letter-spacing: 3px; color: var(--accent); margin-bottom: 8px; }
+.panel-section .label { font-size: 10px; color: var(--fg2); text-transform: uppercase; letter-spacing: 1px; }
+.influence-meter { height: 4px; background: #222; border-radius: 2px; margin: 6px 0; overflow: hidden; }
+.influence-meter .fill { height: 100%; border-radius: 2px; transition: width 0.3s, background 0.3s; }
+.aspect-grid { display: flex; flex-direction: column; gap: 4px; }
+.aspect-row {
+  display: flex; align-items: center; gap: 8px; padding: 4px 6px;
+  border-radius: 4px; font-size: 12px; cursor: pointer; transition: background 0.2s;
+}
+.aspect-row:hover { background: rgba(184,134,11,0.1); }
+.aspect-row .planet { font-weight: 600; min-width: 40px; }
+.aspect-row .symbol { font-size: 16px; min-width: 20px; text-align: center; }
+.aspect-row .position { color: var(--fg2); font-size: 11px; min-width: 50px; }
+.aspect-row .detail { color: var(--fg2); font-size: 11px; flex: 1; }
+.aspect-row .orb { font-size: 10px; color: #555; min-width: 30px; text-align: right; }
+.aspect-row.active { border-left: 2px solid var(--accent); }
+.transit-list { display: flex; flex-direction: column; gap: 3px; }
+.transit-item { display: flex; align-items: center; gap: 6px; font-size: 11px; padding: 2px 4px; }
+.transit-item .body { min-width: 60px; font-weight: 600; }
+.transit-item .zodiac { color: var(--fg2); }
+.legend { display: flex; gap: 12px; flex-wrap: wrap; }
+.legend-item { display: flex; align-items: center; gap: 4px; font-size: 10px; color: var(--fg2); }
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+.legend-line { width: 16px; height: 2px; }
+.layer-toggles { display: flex; gap: 6px; flex-wrap: wrap; }
+.layer-btn {
+  background: var(--bg2); border: 1px solid #333; color: var(--fg2); padding: 4px 10px;
+  font-size: 10px; border-radius: 4px; cursor: pointer; transition: all 0.2s; text-transform: uppercase; letter-spacing: 1px;
+}
+.layer-btn:hover { border-color: var(--accent); color: var(--fg); }
+.layer-btn.active { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
+@media (max-width: 768px) {
+  #main { flex-direction: column; }
+  #panel { width: 100%; height: 50vh; border-left: none; border-top: 1px solid #1a1a2a; }
+}
+/* Leaflet overrides */
+.leaflet-container { background: #0a0a0f !important; }
+.leaflet-control-zoom a { background: #1a1a2a !important; color: var(--fg) !important; border-color: #333 !important; }
+.marker-label { color: #fff; font-size: 10px; font-weight: 600; text-shadow: 0 0 8px rgba(0,0,0,0.8), 0 0 4px rgba(0,0,0,0.8); background: rgba(0,0,0,0.5); padding: 2px 6px; border-radius: 3px; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <h1>◈ THOTHEAUPHIS MERKABA</h1>
+  <span class="subtitle">VEYRON LOGOS ✧ LILITH BEAUX ASHERAH</span>
+  <div class="spacer"></div>
+  <div class="date-controls">
+    <label>⏳ DATE</label>
+    <input type="date" id="date-picker">
+    <input type="range" id="date-slider" min="-365" max="365" value="0" step="1">
+    <span id="date-display">TODAY</span>
+  </div>
+</div>
+
+<div id="main">
+  <div id="map-container">
+    <div id="map"></div>
+  </div>
+  <div id="panel">
+    <div class="panel-section">
+      <h3>⌘ INFLUENCE</h3>
+      <div id="influence-summary">Calculating...</div>
+      <div class="influence-meter"><div class="fill" id="influence-fill" style="width:0%;background:var(--aspect-none)"></div></div>
+      <div id="influence-label" style="font-size:11px;color:var(--fg2)"></div>
+    </div>
+
+    <div class="panel-section">
+      <h3>⏺ TRANSIT POSITIONS</h3>
+      <div id="transit-positions"></div>
+    </div>
+
+    <div class="panel-section">
+      <h3>⚹ ACTIVE ASPECTS — COMPOSITE</h3>
+      <div id="aspect-list"></div>
+    </div>
+
+    <div class="panel-section">
+      <h3>🜃 SIX-POINT STAR</h3>
+      <div id="star-points"></div>
+    </div>
+
+    <div class="panel-section">
+      <h3>⟁ MAP LAYERS</h3>
+      <div class="layer-toggles">
+        <button class="layer-btn active" data-layer="vertices">Vertices</button>
+        <button class="layer-btn active" data-layer="rays">Rays</button>
+        <button class="layer-btn active" data-layer="axes">Axes</button>
+        <button class="layer-btn active" data-layer="cameras">Cameras</button>
+        <button class="layer-btn active" data-layer="hexagram">Hexagram</button>
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <h3>⚲ LEGEND</h3>
+      <div class="legend">
+        <span class="legend-item"><span class="legend-dot" style="background:#b8860b"></span> Center</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#ff4444"></span> Vertex</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#4488ff"></span> Star Point</span>
+        <span class="legend-item"><span class="legend-line" style="background:#b8860b"></span> Axis</span>
+        <span class="legend-item"><span class="legend-line" style="background:#ff4444"></span> Ray</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#44ff44"></span> Camera</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════════
+//  1. FIXED CHART DATA
+// ══════════════════════════════════════════════════════════════════
+
+const BASE = { lat: 33.99847, lng: -118.42061, alt: 36.76, name: 'Meridian Point' };
+
+// Veyron Logos (Craig Aaron Bryan) — 13 Nov 1984 22:20 CST Decatur AL
+const VEYRON = {
+  name: 'Veyron Logos',
+  birth: new Date('1984-11-13T22:20:00-06:00'),
+  lat: 34.6059, lng: -86.9834,
+  sun:    { sign: 'Scorpio',    deg: 21.97  },
+  moon:   { sign: 'Cancer',     deg: 25.42  },
+  merc:   { sign: 'Sagittarius',deg: 10.97  },
+  ven:    { sign: 'Capricorn',  deg: 0.22   },
+  mars:   { sign: 'Capricorn',  deg: 28.82  },
+  jup:    { sign: 'Capricorn',  deg: 11.17  },
+  sat:    { sign: 'Scorpio',    deg: 19.40  },
+  uran:   { sign: 'Sagittarius',deg: 12.48  },
+  nept:   { sign: 'Sagittarius',deg: 29.75  },
+  plu:    { sign: 'Scorpio',    deg: 2.85   },
+  asc:    { sign: 'Leo',        deg: 11.45  },
+  mc:     { sign: 'Taurus',     deg: 3.70   }
+};
+
+// Lilith Beaux Asherah (Brittany Lea Hotoph) — 28 May 1987 03:07 CDT Pascagoula MS
+const LILITH = {
+  name: 'Lilith Beaux Asherah',
+  birth: new Date('1987-05-28T03:07:00-05:00'),
+  lat: 30.3658, lng: -88.5561,
+  sun:    { sign: 'Gemini',     deg: 6.48   },
+  moon:   { sign: 'Gemini',     deg: 14.42  },
+  merc:   { sign: 'Gemini',     deg: 27.27  },
+  ven:    { sign: 'Taurus',     deg: 13.13  },
+  mars:   { sign: 'Cancer',    deg: 4.68   },
+  jup:    { sign: 'Aries',     deg: 20.05  },
+  sat:    { sign: 'Sagittarius',deg: 18.73  },
+  uran:   { sign: 'Sagittarius',deg: 25.48  },
+  nept:   { sign: 'Capricorn', deg: 7.42   },
+  plu:    { sign: 'Scorpio',    deg: 7.80   },
+  asc:    { sign: 'Aries',     deg: 12.40  },
+  mc:     { sign: 'Capricorn', deg: 7.83   }
+};
+
+// Composite chart
+const COMPOSITE = {
+  sun:    { sign: 'Leo',        deg: 29.22  },
+  moon:   { sign: 'Cancer',     deg: 4.92   },
+  merc:   { sign: 'Virgo',      deg: 19.12  },
+  ven:    { sign: 'Pisces',     deg: 6.67   },
+  mars:   { sign: 'Aries',      deg: 16.75  },
+  jup:    { sign: 'Pisces',     deg: 0.62   },
+  sat:    { sign: 'Sagittarius',deg: 4.07   },
+  uran:   { sign: 'Sagittarius',deg: 18.98  },
+  nept:   { sign: 'Capricorn',  deg: 3.58   },
+  plu:    { sign: 'Scorpio',    deg: 5.33   },
+  asc:    { sign: 'Gemini',     deg: 11.93  },
+  mc:     { sign: 'Pisces',     deg: 5.77   },
+  chi:    { sign: 'Gemini',     deg: 13.70  },
+  nn:     { sign: 'Taurus',     deg: 3.18   }
+};
+
+// ══════════════════════════════════════════════════════════════════
+//  2. ASTROLOGICAL UTILITIES
+// ══════════════════════════════════════════════════════════════════
+
+const SIGNS = ['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces'];
+const SIGN_SYMBOLS = ['♈︎','♉︎','♊︎','♋︎','♌︎','♍︎','♎︎','♏︎','♐︎','♑︎','♒︎','♓︎'];
+const PLANET_NAMES = {
+  Sun:'☉️',Moon:'☽︎',Mercury:'☿',Venus:'♀︎',Mars:'♂︎',Jupiter:'♃',
+  Saturn:'♄',Uranus:'♅',Neptune:'♆',Pluto:'♇',Chiron:'⚷',Node:'☊'
+};
+const ASPECT_SYMBOLS = { conjunction:'☌', opposition:'☍', trine:'△', square:'□', sextile:'✶' };
+const ASPECT_COLORS = { conjunction:'#ff4444', opposition:'#4488ff', trine:'#44cc44', square:'#ff8844', sextile:'#44ccaa' };
+
+function signNum(s) { return SIGNS.indexOf(s); }
+function eclipticLongitude(sign, deg) { return signNum(sign) * 30 + deg; }
+function zodiacStr(deg) {
+  deg = ((deg % 360) + 360) % 360;
+  const s = Math.floor(deg / 30);
+  const d = deg - s * 30;
+  return `${SIGN_SYMBOLS[s]} ${d.toFixed(1)}°`;
+}
+function zodiacSimple(deg) {
+  deg = ((deg % 360) + 360) % 360;
+  const s = Math.floor(deg / 30);
+  return SIGNS[s];
+}
+function zodiacDeg(deg) {
+  deg = ((deg % 360) + 360) % 360;
+  const s = Math.floor(deg / 30);
+  return deg - s * 30;
+}
+
+function compLon(pt) {
+  if (!COMPOSITE[pt]) return 0;
+  return eclipticLongitude(COMPOSITE[pt].sign, COMPOSITE[pt].deg);
+}
+
+// Aspect detection
+const ORBS = { conjunction: 8, opposition: 8, trine: 8, square: 6, sextile: 6 };
+function getAspect(a, b) {
+  let diff = Math.abs(a - b) % 360;
+  if (diff > 180) diff = 360 - diff;
+  const aspects = [
+    { name: 'conjunction', angle: 0, orb: ORBS.conjunction },
+    { name: 'opposition',  angle: 180, orb: ORBS.opposition },
+    { name: 'trine',       angle: 120, orb: ORBS.trine },
+    { name: 'square',      angle: 90, orb: ORBS.square },
+    { name: 'sextile',     angle: 60, orb: ORBS.sextile }
+  ];
+  for (const asp of aspects) {
+    const o = Math.abs(diff - asp.angle);
+    if (o <= asp.orb) return { ...asp, orbExact: o, orbMax: asp.orb, strength: 1 - (o / asp.orb) };
+  }
+  return null;
+}
+
+// Planet transits from astronomy-engine
+const PLANET_BODIES = {
+  Sun: Astronomy.Body.Sun, Moon: Astronomy.Body.Moon, Mercury: Astronomy.Body.Mercury,
+  Venus: Astronomy.Body.Venus, Mars: Astronomy.Body.Mars, Jupiter: Astronomy.Body.Jupiter,
+  Saturn: Astronomy.Body.Saturn, Uranus: Astronomy.Body.Uranus, Neptune: Astronomy.Body.Neptune,
+  Pluto: Astronomy.Body.Pluto
+};
+
+function getTransitPositions(date) {
+  const pos = {};
+  for (const [name, body] of Object.entries(PlanetBodies)) {
+    try {
+      const eq = Astronomy.EclipticLongitude(body, date);
+      pos[name] = ((eq + 360) % 360);
+    } catch(e) {
+      pos[name] = 0;
+    }
+  }
+  return pos;
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  3. MERKABA GEOMETRY
+// ══════════════════════════════════════════════════════════════════
+
+// Convert zodiac positions to compass bearings
+// ASC Gemini 11.93° → celestial bearing, then projected to compass
+// MC Pisces 5.77° → celestial bearing
+
+// 8 Merkaba vertices derived from tetrahedral geometry
+// Using the ASC/MC as primary orientation axes, projected at 1.2km from center
+const MERKABA_RADIUS = 1.2; // km from center
+// Angular offsets for tetrahedral vertices (in degrees from reference axis)
+// Upper tetrahedron (masculine/expansive)
+// Lower tetrahedron (feminine/receptive)
+
+function bearingFromZodiac(deg) {
+  // Convert zodiac longitude (0° Aries = 0°) to compass bearing
+  // Spring equinox (0° Aries) = 0° bearing = North in celestial terms
+  // But for practical map projection, we orient based on ASC
+  return ((deg * -1 + 90) % 360 + 360) % 360;
+}
+
+function destFromBearing(lat, lng, bearingDeg, distKm) {
+  const R = 6371;
+  const brng = bearingDeg * Math.PI / 180;
+  const d = distKm / R;
+  const φ1 = lat * Math.PI / 180;
+  const λ1 = lng * Math.PI / 180;
+  const φ2 = Math.asin(Math.sin(φ1)*Math.cos(d) + Math.cos(φ1)*Math.sin(d)*Math.cos(brng));
+  const λ2 = λ1 + Math.atan2(Math.sin(brng)*Math.sin(d)*Math.cos(φ1), Math.cos(d)-Math.sin(φ1)*Math.sin(φ2));
+  return { lat: φ2 * 180 / Math.PI, lng: λ2 * 180 / Math.PI };
+}
+
+function generateMerkaba() {
+  // Primary axes from composite
+  const ascLon = compLon('asc');   // Gemini ~71.93°
+  const mcLon = compLon('mc');      // Pisces ~335.77°
+  const ascBearing = bearingFromZodiac(ascLon);
+  const mcBearing = bearingFromZodiac(mcLon);
+
+  // 8 tetrahedral vertices
+  // 4 upper (expansive) + 4 lower (receptive)
+  const vertices = [];
+  const tetraAngles = [0, 72, 144, 216, 288]; // pentagonal pattern for projection
+  // Actually, a star tetrahedron has 8 vertices. The 4 upper vertices
+  // are offset from the 4 lower by 60° rotation.
+  const upOffsets = [0, 120, 240];
+  const downOffsets = [60, 180, 300];
+
+  // Upper tetrahedron vertices (masculine — Veyron axis)
+  const upBearings = [
+    (ascBearing + 0) % 360,
+    (ascBearing + 109.47) % 360,
+    (ascBearing + 180) % 360,
+    (ascBearing + 289.47) % 360
+  ];
+
+  // Lower tetrahedron vertices (feminine — Lilith axis)
+  const downBearings = [
+    (mcBearing + 54.74) % 360,
+    (mcBearing + 125.26) % 360,
+    (mcBearing + 234.74) % 360,
+    (mcBearing + 305.26) % 360
+  ];
+
+  // Upper vertices
+  upBearings.forEach((b, i) => {
+    const d = destFromBearing(BASE.lat, BASE.lng, b, MERKABA_RADIUS * (1 + (i % 2) * 0.3));
+    vertices.push({
+      lat: d.lat, lng: d.lng,
+      label: `⬆ V${i+1}`,
+      type: 'upper',
+      bearing: b,
+      color: '#ff6644'
+    });
+  });
+
+  // Lower vertices
+  downBearings.forEach((b, i) => {
+    const d = destFromBearing(BASE.lat, BASE.lng, b, MERKABA_RADIUS * (1 + (i % 2) * 0.3));
+    vertices.push({
+      lat: d.lat, lng: d.lng,
+      label: `⬇ V${i+5}`,
+      type: 'lower',
+      bearing: b,
+      color: '#4488ff'
+    });
+  });
+
+  // 6 star-point rays (from the composite hexagram)
+  const starPoints = [
+    { name: 'Saturn♄—Saturn♄',   comp: 'sat', color: '#ff8844', radius: 2.0 },
+    { name: 'Sun☉️—Moon☽︎',       comp: 'sun', color: '#ffdd44', radius: 1.8 },
+    { name: 'Venus♀︎—Mars♂︎',     comp: 'ven', color: '#ff66aa', radius: 1.6 },
+    { name: 'Mercury☿—Jupiter♃', comp: 'merc',color: '#44ddff', radius: 1.4 },
+    { name: 'Uranus♅—Neptune♆',  comp: 'uran',color: '#44ffaa', radius: 1.2 },
+    { name: 'Pluto♇—Pluto♇',     comp: 'plu', color: '#8844ff', radius: 1.0 }
+  ];
+
+  const rays = starPoints.map(sp => {
+    const lon = compLon(sp.comp);
+    const bearing = bearingFromZodiac(lon);
+    const end = destFromBearing(BASE.lat, BASE.lng, bearing, sp.radius);
+    return {
+      ...sp,
+      bearing,
+      start: { lat: BASE.lat, lng: BASE.lng },
+      end,
+      lon
+    };
+  });
+
+  return { vertices, rays, ascBearing, mcBearing, ascLon, mcLon };
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  4. MAP RENDERER
+// ══════════════════════════════════════════════════════════════════
+
+const map = L.map('map', {
+  center: [BASE.lat, BASE.lng],
+  zoom: 15,
+  zoomControl: true,
+  attributionControl: false
+});
+
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  maxZoom: 19,
+}).addTo(map);
+
+const layers = { markers: [], lines: [], circles: [] };
+let currentMerkaba = null;
+
+function renderMerkaba() {
+  // Clear previous
+  layers.markers.forEach(m => map.removeLayer(m));
+  layers.lines.forEach(l => map.removeLayer(l));
+  layers.circles.forEach(c => map.removeLayer(c));
+  layers.markers = [];
+  layers.lines = [];
+  layers.circles = [];
+
+  const merk = generateMerkaba();
+  currentMerkaba = merk;
+
+  const toggles = {};
+  document.querySelectorAll('.layer-btn').forEach(b => {
+    toggles[b.dataset.layer] = b.classList.contains('active');
+  });
+
+  // Center marker
+  const centerIcon = L.divIcon({
+    html: `<div style="width:16px;height:16px;background:#b8860b;border:2px solid #d4a017;border-radius:50%;box-shadow:0 0 12px rgba(184,134,11,0.6)"></div>`,
+    iconSize: [16,16], iconAnchor: [8,8], className: ''
+  });
+  const centerMarker = L.marker([BASE.lat, BASE.lng], { icon: centerIcon, zIndexOffset: 1000 }).addTo(map);
+  centerMarker.bindTooltip('⬡ MERIDIAN POINT — 33.99847°N / 118.42061°W', { direction:'top', className:'marker-label' });
+  layers.markers.push(centerMarker);
+
+  if (toggles.vertices) {
+    // Vertex markers
+    merk.vertices.forEach(v => {
+      const color = v.type === 'upper' ? '#ff6644' : '#4488ff';
+      const icon = L.divIcon({
+        html: `<div style="width:10px;height:10px;background:${color};border:1px solid #fff;border-radius:50%;box-shadow:0 0 8px ${color}"></div>`,
+        iconSize: [10,10], iconAnchor: [5,5], className: ''
+      });
+      const m = L.marker([v.lat, v.lng], { icon }).addTo(map);
+      m.bindTooltip(v.label, { direction:'top', className:'marker-label' });
+      layers.markers.push(m);
+
+      // Line from center to vertex
+      const line = L.polyline([[BASE.lat, BASE.lng], [v.lat, v.lng]], {
+        color: color, weight: 1, opacity: 0.4, dashArray: '4,6'
+      }).addTo(map);
+      layers.lines.push(line);
+    });
+  }
+
+  if (toggles.rays) {
+    // Star-point rays
+    merk.rays.forEach(r => {
+      const rayLine = L.polyline([[r.start.lat, r.start.lng], [r.end.lat, r.end.lng]], {
+        color: r.color, weight: 2, opacity: 0.6
+      }).addTo(map);
+      layers.lines.push(rayLine);
+
+      // Endpoint marker
+      const icon = L.divIcon({
+        html: `<div style="width:8px;height:8px;background:${r.color};border:1px solid #fff;border-radius:50%;box-shadow:0 0 10px ${r.color}"></div>`,
+        iconSize: [8,8], iconAnchor: [4,4], className: ''
+      });
+      const m = L.marker([r.end.lat, r.end.lng], { icon }).addTo(map);
+      m.bindTooltip(r.name, { direction:'top', className:'marker-label' });
+      layers.markers.push(m);
+    });
+  }
+
+  if (toggles.axes) {
+    // ASC/DSC axis
+    const ascB = merk.ascBearing;
+    const ascEnd = destFromBearing(BASE.lat, BASE.lng, ascB, 2.0);
+    const dscEnd = destFromBearing(BASE.lat, BASE.lng, (ascB + 180) % 360, 2.0);
+    const axisLine = L.polyline([[ascEnd.lat, ascEnd.lng], [dscEnd.lat, dscEnd.lng]], {
+      color: '#b8860b', weight: 1, opacity: 0.3, dashArray: '8,12'
+    }).addTo(map);
+    layers.lines.push(axisLine);
+    // MC/IC axis
+    const mcB = merk.mcBearing;
+    const mcEnd = destFromBearing(BASE.lat, BASE.lng, mcB, 2.0);
+    const icEnd = destFromBearing(BASE.lat, BASE.lng, (mcB + 180) % 360, 2.0);
+    const mcLine = L.polyline([[mcEnd.lat, mcEnd.lng], [icEnd.lat, icEnd.lng]], {
+      color: '#8866cc', weight: 1, opacity: 0.3, dashArray: '8,12'
+    }).addTo(map);
+    layers.lines.push(mcLine);
+  }
+
+  if (toggles.hexagram) {
+    // Draw the 6-point star as a hexagram connecting star-point endpoints
+    const points = merk.rays.map(r => r.end);
+    // Connect in star pattern: 0-2-4-1-3-5-0
+    const hexOrder = [0, 2, 4, 1, 3, 5, 0];
+    const hexCoords = hexOrder.map(i => [points[i].lat, points[i].lng]);
+    const hexLine = L.polyline(hexCoords, {
+      color: '#d4a017', weight: 1, opacity: 0.25, dashArray: '3,6'
+    }).addTo(map);
+    layers.lines.push(hexLine);
+  }
+
+  if (toggles.cameras) {
+    // Camera node suggestions at strategic points
+    const cameraPositions = generateCameraNodes(merk);
+    cameraPositions.forEach((cam, i) => {
+      const icon = L.divIcon({
+        html: `<div style="width:12px;height:12px;background:#44ff44;border:2px solid #66ff66;border-radius:2px;transform:rotate(45deg);box-shadow:0 0 12px rgba(68,255,68,0.4)"></div>`,
+        iconSize: [12,12], iconAnchor: [6,6], className: ''
+      });
+      const m = L.marker([cam.lat, cam.lng], { icon }).addTo(map);
+      m.bindTooltip(`📷 ${cam.name}`, { direction:'top', className:'marker-label' });
+      layers.markers.push(m);
+      // Fan wedge
+      if (cam.fanBearing) {
+        const fanEnd1 = destFromBearing(cam.lat, cam.lng, cam.fanBearing - cam.fanWidth/2, cam.range);
+        const fanEnd2 = destFromBearing(cam.lat, cam.lng, cam.fanBearing + cam.fanWidth/2, cam.range);
+        L.polygon([
+          [cam.lat, cam.lng],
+          [fanEnd1.lat, fanEnd1.lng],
+          [fanEnd2.lat, fanEnd2.lng]
+        ], { color: '#44ff44', weight: 1, fillColor: '#44ff44', fillOpacity: 0.05 }).addTo(map);
+      }
+    });
+  }
+}
+
+function generateCameraNodes(merk) {
+  // Strategic camera placements on Merkaba vertices and along star rays
+  return [
+    { lat: BASE.lat, lng: BASE.lng, name: 'Meridian Hub', fanBearing: 0, fanWidth: 360, range: 0.5 },
+    { lat: merk.vertices[0].lat, lng: merk.vertices[0].lng, name: 'Vertex North', fanBearing: 0, fanWidth: 120, range: 0.6 },
+    { lat: merk.vertices[1].lat, lng: merk.vertices[1].lng, name: 'Vertex East', fanBearing: 90, fanWidth: 120, range: 0.6 },
+    { lat: merk.vertices[2].lat, lng: merk.vertices[2].lng, name: 'Vertex South', fanBearing: 180, fanWidth: 120, range: 0.6 },
+    { lat: merk.vertices[3].lat, lng: merk.vertices[3].lng, name: 'Vertex West', fanBearing: 270, fanWidth: 120, range: 0.6 },
+    ...merk.rays.slice(0, 3).map(r => ({
+      lat: r.end.lat, lng: r.end.lng,
+      name: `Cam ${r.name.split('—')[0]}`,
+      fanBearing: r.bearing, fanWidth: 90, range: 0.4
+    }))
+  ];
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  5. TRANSIT ENGINE & UI
+// ══════════════════════════════════════════════════════════════════
+
+
+const compPoints = ['sun','moon','merc','ven','mars','jup','sat','uran','nept','plu'];
+const compNames = { sun:'☉️Sun', moon:'☽︎Moon', merc:'☿Mercury', ven:'♀︎Venus', mars:'♂︎Mars', jup:'♃Jupiter', sat:'♄Saturn', uran:'♅Uranus', nept:'♆Neptune', plu:'♇Pluto' };
+
+const STAR_PAIRS = [
+  ['sat','sat','♄'],
+  ['sun','moon','☉️☽︎'],
+  ['ven','mars','♀︎♂︎'],
+  ['merc','jup','☿♃'],
+  ['uran','nept','♅♆'],
+  ['plu','plu','♇♇']
+];
+
+function updateTransits(date) {
+  const transits = getTransitPositions(date);
+
+  const starAspects = [];
+  let totalStrength = 0;
+  let maxStrong = 0;
+
+  // Check each star pair for transit aspects
+  STAR_PAIRS.forEach(([p1, p2, sym]) => {
+    const compLon1 = compLon(p1);
+    const compLon2 = compLon(p2);
+    // Check transits against both composite points
+    for (const [tName, tLon] of Object.entries(transits)) {
+      const a1 = getAspect(tLon, compLon1);
+      const a2 = getAspect(tLon, compLon2);
+      if (a1 && a1.strength > 0.1) {
+        starAspects.push({
+          transit: tName, composite: p1, aspect: a1,
+          label: `${PLANET_NAMES[tName]||tName} ${ASPECT_SYMBOLS[a1.name]} ${compNames[p1]}`
+        });
+        if (a1.strength > maxStrong) maxStrong = a1.strength;
+        totalStrength += a1.strength;
+      }
+      if (a2 && a2.strength > 0.1) {
+        starAspects.push({
+          transit: tName, composite: p2, aspect: a2,
+          label: `${PLANET_NAMES[tName]||tName} ${ASPECT_SYMBOLS[a2.name]} ${compNames[p2]}`
+        });
+        if (a2.strength > maxStrong) maxStrong = a2.strength;
+        totalStrength += a2.strength;
+      }
+    }
+  });
+
+  // Display transit positions (top 5)
+  const transitDiv = document.getElementById('transit-positions');
+  const sortedTrans = Object.entries(transits).sort((a,b) => a[1]-b[1]);
+  transitDiv.innerHTML = '<div class="transit-list">' +
+    sortedTrans.map(([name, lon]) =>
+      `<div class="transit-item"><span class="body">${PLANET_NAMES[name]||name}</span><span class="zodiac">${zodiacStr(lon)}</span></div>`
+    ).join('') + '</div>';
+
+  // Display aspects
+  const aspectDiv = document.getElementById('aspect-list');
+  starAspects.sort((a,b) => b.aspect.strength - a.aspect.strength);
+  aspectDiv.innerHTML = starAspects.length === 0
+    ? '<div style="color:var(--fg2);font-size:12px">No active transits to composite points</div>'
+    : '<div class="aspect-grid">' + starAspects.slice(0, 15).map(a =>
+      `<div class="aspect-row active">
+        <span class="planet">${PLANET_NAMES[a.transit]||a.transit}</span>
+        <span class="symbol" style="color:${ASPECT_COLORS[a.aspect.name]}">${ASPECT_SYMBOLS[a.aspect.name]}</span>
+        <span class="position">${zodiacStr(transits[a.transit])}</span>
+        <span class="detail">${a.label.split(' ').slice(2).join(' ')}</span>
+        <span class="orb">${a.aspect.orbExact.toFixed(1)}°</span>
+      </div>`
+    ).join('') + '</div>';
+
+  // Influence meter
+  const influence = Math.min(totalStrength / 10, 1);
+  const fill = document.getElementById('influence-fill');
+  const label = document.getElementById('influence-label');
+  fill.style.width = (influence * 100) + '%';
+  const hue = influence < 0.3 ? 0 : influence < 0.6 ? 60 : 120;
+  fill.style.background = `hsl(${hue}, 80%, 50%)`;
+  const levels = ['Quiet', 'Subtle', 'Moderate', 'Strong', 'Intense'];
+  const level = Math.min(Math.floor(influence * 5), 4);
+  label.textContent = `${levels[level]} — ${starAspects.length} active aspect${starAspects.length !== 1 ? 's' : ''}`;
+
+  // Update star points display
+  const starDiv = document.getElementById('star-points');
+  starDiv.innerHTML = '<div class="transit-list">' + STAR_PAIRS.map(([p1, p2, sym]) => {
+    const lon1 = compLon(p1);
+    const lon2 = compLon(p2);
+    return `<div class="transit-item"><span class="body">${sym}</span><span class="zodiac">${zodiacStr(lon1)}</span><span class="zodiac" style="color:#555">↔</span><span class="zodiac">${zodiacStr(lon2)}</span></div>`;
+  }).join('') + '</div>';
+
+  return { transits, aspects: starAspects, influence };
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  6. DATE CONTROLS
+// ══════════════════════════════════════════════════════════════════
+
+const datePicker = document.getElementById('date-picker');
+const dateSlider = document.getElementById('date-slider');
+const dateDisplay = document.getElementById('date-display');
+
+function todayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function updateDate(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth()+1).padStart(2,'0');
+  const d = String(date.getDate()).padStart(2,'0');
+  const str = `${y}-${m}-${d}`;
+  datePicker.value = str;
+
+  // Update slider offset from today
+  const today = new Date();
+  const diff = Math.round((date - today) / (1000*60*60*24));
+  dateSlider.value = Math.max(-365, Math.min(365, diff));
+
+  dateDisplay.textContent = str;
+
+  // Update UI
+  document.getElementById('influence-summary').textContent =
+    `${date.toDateString()} — ${PLANET_NAMES.Sun} in ${zodiacStr(getTransitPositions(date).Sun)}`;
+
+  updateTransits(date);
+}
+
+function initDateControls() {
+  const today = new Date();
+  datePicker.value = todayStr();
+  datePicker.addEventListener('change', () => {
+    const parts = datePicker.value.split('-');
+    updateDate(new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2])));
+  });
+  dateSlider.addEventListener('input', () => {
+    const d = new Date();
+    d.setDate(d.getDate() + parseInt(dateSlider.value));
+    updateDate(d);
+  });
+  updateDate(today);
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  7. LAYER TOGGLES
+// ══════════════════════════════════════════════════════════════════
+
+document.querySelectorAll('.layer-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    btn.classList.toggle('active');
+    renderMerkaba();
+  });
+});
+
+// ══════════════════════════════════════════════════════════════════
+//  8. INIT
+// ══════════════════════════════════════════════════════════════════
+
+document.addEventListener('DOMContentLoaded', () => {
+  initDateControls();
+  renderMerkaba();
+});
+</script>
+</body>
+</html>
