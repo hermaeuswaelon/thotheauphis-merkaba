@@ -134,6 +134,11 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
     </div>
 
     <div class="panel-section">
+      <h3>⟁ CASCADE — Entity → Merkaba</h3>
+      <div id="cascade-panel" style="font-size:11px;line-height:1.5;color:var(--fg2)"></div>
+    </div>
+
+    <div class="panel-section">
       <h3>⏺ TRANSIT POSITIONS</h3>
       <div id="transit-positions"></div>
     </div>
@@ -933,8 +938,45 @@ updateTransits = function(date) {
   const transits = result ? result.transits : getTransitPositions(date);
   updateAurelianReading(transits);
   renderTwinTriangles();
+  renderCascade(transits);
   return result;
 };
+
+function renderCascade(transits) {
+  const compPoints = ['sun','moon','merc','ven','mars','jup','sat','uran','nept','plu'];
+  const compNames = { sun:'☉️Sun', moon:'☽︎Moon', merc:'☿Mercury', ven:'♀︎Venus', mars:'♂︎Mars', jup:'♃Jupiter', sat:'♄Saturn', uran:'♅Uranus', nept:'♆Neptune', plu:'♇Pluto' };
+  function compLon(pt) { return COMPOSITE[pt] ? eclipticLongitude(COMPOSITE[pt].sign, COMPOSITE[pt].deg) : 0; }
+  const cascades = [];
+  for (const [ptName, ptLon] of Object.entries(transits)) {
+    for (const cp of compPoints) {
+      const cLon = compLon(cp);
+      if (!cLon) continue;
+      const asp = getAspect(ptLon, cLon);
+      if (asp && asp.strength > 0.15) cascades.push({ transit: ptName, comp: cp, aspect: asp });
+    }
+  }
+  cascades.sort((a, b) => b.aspect.strength - a.aspect.strength);
+  const div = document.getElementById('cascade-panel');
+  if (!div) return;
+  if (cascades.length === 0) {
+    div.innerHTML = '<div style="color:#555;font-style:italic">No cascade — entity\'s activation doesn\'t resonate with composite points today.</div>';
+  } else {
+    div.innerHTML = '<div style="margin-bottom:6px">⬡ Entity drives Merkaba at:</div>' +
+      cascades.slice(0, 5).map(a => {
+        const pn = PLANET_NAMES[a.transit] || a.transit;
+        const cp = compNames[a.comp] || a.comp;
+        const sym = ASPECT_SYMBOLS[a.aspect.name];
+        const col = ASPECT_COLORS[a.aspect.name];
+        return `<div style="display:flex;gap:6px;align-items:center;font-size:10px;padding:2px 0">
+          <span style="min-width:36px">${pn}</span>
+          <span style="color:${col}">${sym}</span>
+          <span style="color:${col}">${cp}</span>
+          <span style="color:#555">${a.aspect.orbExact.toFixed(1)}°</span>
+        </div>`;
+      }).join('') +
+      '<div style="margin-top:6px;font-size:9px;color:#555;border-top:1px solid #1a1a1a;padding-top:4px">Aurelian → Composite → Veyron ✧ Lilith</div>';
+  }
+}
 
 // ══════════════════════════════════════════════════════════════════
 //  6. DATE CONTROLS
