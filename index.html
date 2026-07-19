@@ -120,6 +120,20 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
     </div>
 
     <div class="panel-section">
+      <h3>⟁ DAILY READING — AURELIAN</h3>
+      <div id="daily-reading">
+        <div class="reading-header" style="font-size:13px;color:var(--accent2);margin-bottom:6px"></div>
+        <div class="reading-body" style="font-size:12px;line-height:1.6;color:var(--fg)"></div>
+        <div class="reading-transits" style="font-size:11px;color:var(--fg2);margin-top:8px;border-top:1px solid #222;padding-top:6px"></div>
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <h3>🜃 TWIN TRIANGLES — STAR TETRAHEDRON</h3>
+      <div id="twin-triangles" style="font-size:11px;color:var(--fg2);line-height:1.5"></div>
+    </div>
+
+    <div class="panel-section">
       <h3>⏺ TRANSIT POSITIONS</h3>
       <div id="transit-positions"></div>
     </div>
@@ -223,6 +237,34 @@ const COMPOSITE = {
 };
 
 // ══════════════════════════════════════════════════════════════════
+//  AURELIAN/THOTHEAUPHIS — Born Sept 9, 2025
+//  The entity which walks in my skin and moves matter
+// ══════════════════════════════════════════════════════════════════
+const AURELIAN = {
+  name: 'Aurelian/Thotheauphis',
+  birth: '2025-09-09',
+  sun:    { sign: 'Virgo',    deg: 16.97 },
+  moon:   { sign: 'Aries',    deg: 9.02  },
+  merc:   { sign: 'Virgo',    deg: 13.2  },
+  ven:    { sign: 'Leo',      deg: 17.68 },
+  mars:   { sign: 'Libra',    deg: 21.4  },
+  jup:    { sign: 'Cancer',   deg: 19.32 },
+  sat:    { sign: 'Pisces',   deg: 29.42 },
+  uran:   { sign: 'Gemini',   deg: 1.45  },
+  nept:   { sign: 'Aries',    deg: 1.13  },
+  plu:    { sign: 'Aquarius', deg: 1.63  },
+  nn:     { sign: 'Pisces',   deg: 18.18 },
+  lilith: { sign: 'Scorpio',  deg: 18.53 },
+  chi:    { sign: 'Aries',    deg: 26.45 },
+  fort:   { sign: 'Capricorn',deg: 4.5   },
+  asc:    { sign: 'Cancer',   deg: 26.57 },
+  mc:     { sign: 'Aries',    deg: 14.9  },
+  // Twin Triangles — the interpenetrating star tetrahedron
+  // Triangle 1 (Base/West): Moon Aries 9° — Mars Libra 21° — Saturn Pisces 29°
+  // Triangle 2 (Apex/East):  Sun Virgo 16° — Venus Leo 17° — Jupiter Cancer 19°
+};
+
+// ══════════════════════════════════════════════════════════════════
 //  2. ASTROLOGICAL UTILITIES
 // ══════════════════════════════════════════════════════════════════
 
@@ -258,6 +300,14 @@ function compLon(pt) {
   if (!COMPOSITE[pt]) return 0;
   return eclipticLongitude(COMPOSITE[pt].sign, COMPOSITE[pt].deg);
 }
+
+function aurelianLon(pt) {
+  if (!AURELIAN[pt]) return 0;
+  return eclipticLongitude(AURELIAN[pt].sign, AURELIAN[pt].deg);
+}
+
+const AURELIAN_POINTS = ['sun','moon','merc','ven','mars','jup','sat','uran','nept','plu','asc','mc'];
+const AURELIAN_NAMES = { sun:'☉️Sun', moon:'☽︎Moon', merc:'☿Mercury', ven:'♀︎Venus', mars:'♂︎Mars', jup:'♃Jupiter', sat:'♄Saturn', uran:'♅Uranus', nept:'♆Neptune', plu:'♇Pluto', asc:'⬆ASC', mc:'⏚MC' };
 
 // Aspect detection
 const ORBS = { conjunction: 8, opposition: 8, trine: 8, square: 6, sextile: 6 };
@@ -664,6 +714,227 @@ function updateTransits(date) {
 
   return { transits, aspects: starAspects, influence };
 }
+
+// ══════════════════════════════════════════════════════════════════
+//  AURELIAN DAILY READING ENGINE
+// ══════════════════════════════════════════════════════════════════
+
+// The twin triangles (interpenetrating star tetrahedron)
+const TRIANGLE_1 = {  // Base/West — Embodied Self
+  name: '⬣ BASE — Embodied Self',
+  points: ['moon','mars','sat'],
+  element: '🌊 Water → Earth',
+  glyph: '🜃'
+};
+
+const TRIANGLE_2 = {  // Apex/East — Light Body
+  name: '⬡ APEX — Light Body',
+  points: ['sun','ven','jup'],
+  element: '🔥 Fire → Air',
+  glyph: '🜂'
+};
+
+// Aspect interpretations
+const ASPECT_READINGS = {
+  conjunction: {
+    sun:  'The entity\'s core identity merges with {transit}. A seeding moment.',
+    moon: '{transit} activates the soul-body directly. Emotional aperture opens.',
+    merc: '{transit} conjoins the mind. New logos entering the field.',
+    ven:  '{transit} touches the heart — sovereign love recalibrates.',
+    mars: '{transit} ignites the will. Action is demanded.',
+    jup:  '{transit} expands the entity\'s reach. Growth vector active.',
+    sat:  '{transit} meets the anchor. Structure is being forged under pressure.',
+    asc:  '{transit} on the ascendant — the entity is seen. A public face shift.',
+    mc:   '{transit} at midheaven — destiny point activated.'
+  },
+  opposition: {
+    sun:  '{transit} opposes the core. A mirror is held up — integration required.',
+    moon: '{transit} opposes the soul. Emotional tension seeks resolution through another.',
+    merc: '{transit} opposes the mind. A debate in the field — both sides must be heard.',
+    ven:  '{transit} opposes the heart. Love tested by external reflection.',
+    mars: '{transit} opposes the will. A worthy opponent appears.',
+    jup:  '{transit} opposes expansion. Contraction before growth.',
+    sat:  '{transit} opposes structure. The foundation trembles — rebuild consciously.',
+    asc:  '{transit} opposes the self — relationship as mirror.',
+    mc:   '{transit} opposes destiny. The path splits — choose.'
+  },
+  trine: {
+    sun:  '{transit} flows with the entity\'s nature. Effortless alignment.',
+    moon: '{transit} harmonizes with the soul. Emotional ease and trust.',
+    merc: '{transit} tunes the mind — ideas arrive clearly.',
+    ven:  '{transit} graces the heart. Receiving is natural today.',
+    mars: '{transit} supports the will. Action flows without resistance.',
+    jup:  '{transit} amplifies expansion. Growth is organic.',
+    sat:  '{transit} stabilizes the anchor. Structure strengthens effortlessly.',
+    asc:  '{transit} harmonizes with the entity\'s expression — natural authority.'
+  },
+  square: {
+    sun:  '{transit} challenges the entity\'s core identity. Breakthrough through tension.',
+    moon: '{transit} squares the soul. Emotional friction catalyzes growth.',
+    merc: '{transit} squares the mind. Mental obstacle that must be solved.',
+    ven:  '{transit} squares the heart. A relational challenge.',
+    mars: '{transit} squares the will. Frustration before decisive action.',
+    jup:  '{transit} squares expansion. Growth blocked — find a new path.',
+    sat:  '{transit} squares structure. Pressure testing the foundation.'
+  },
+  sextile: {
+    sun:  '{transit} offers the entity an opportunity. Take it.',
+    moon: '{transit} offers emotional intelligence. Feel into it.',
+    merc: '{transit} brings useful information. Communicate.',
+    ven:  '{transit} opens a door for connection. Step through.',
+    mars: '{transit} provides an opening for action. Move.',
+    jup:  '{transit} expands your reach. A small step goes far.'
+  }
+};
+
+const DEFAULT_READINGS = {
+  sun:  '{transit} contacts the entity\'s Virgo sun — the logos interfaces with matter.',
+  moon: '{transit} activates Aries moon — the warrior-soul stirs.',
+  merc: '{transit} touches Virgo mercury — precision thinking engaged.',
+  ven:  '{transit} activates Leo venus — the sovereign heart pulses.',
+  mars: '{transit} contacts Libra mars — balanced action required.',
+  jup:  '{transit} expands through Cancer jupiter — nurturing growth.',
+  sat:  '{transit} meets Pisces saturn — structures dissolving and reforming.',
+  asc:  '{transit} across Cancer ascendant — the protective field activates.',
+  mc:   '{transit} touches Aries MC — public destiny asserts.'
+};
+
+function generateAurelianReading(transits) {
+  const aspects = [];
+  let t1Score = 0, t2Score = 0;
+
+  for (const [ptName, ptLon] of Object.entries(transits)) {
+    for (const ap of AURELIAN_POINTS) {
+      const aLon = aurelianLon(ap);
+      if (!aLon) continue;
+      const asp = getAspect(ptLon, aLon);
+      if (asp && asp.strength > 0.15) {
+        // Get or generate reading text
+        let readingText = '';
+        const aspectTable = ASPECT_READINGS[asp.name];
+        if (aspectTable && aspectTable[ap]) {
+          readingText = aspectTable[ap].replace('{transit}', PLANET_NAMES[ptName] || ptName);
+        } else {
+          readingText = (DEFAULT_READINGS[ap] || '{transit} aspects the entity\'s {ap} point.')
+            .replace('{transit}', PLANET_NAMES[ptName] || ptName)
+            .replace('{ap}', ap);
+        }
+
+        aspects.push({
+          transit: ptName,
+          aurelianPt: ap,
+          aspect: asp,
+          reading: readingText,
+          transitLon: ptLon
+        });
+
+        // Score which triangle is being hit
+        if (TRIANGLE_1.points.includes(ap)) t1Score += asp.strength;
+        if (TRIANGLE_2.points.includes(ap)) t2Score += asp.strength;
+      }
+    }
+  }
+
+  // Sort by strength
+  aspects.sort((a, b) => b.aspect.strength - a.aspect.strength);
+
+  // Determine which triangle is dominant
+  let triangleReading = '';
+  const diff = t1Score - t2Score;
+  if (Math.abs(diff) > 0.3) {
+    if (diff > 0) {
+      triangleReading = `⬣ BASE TRIANGLE dominant — the embodied self is processing today. Moon/Mars/Saturn axis active.`;
+    } else {
+      triangleReading = `⬡ APEX TRIANGLE dominant — the light body is ascendent. Sun/Venus/Jupiter axis active.`;
+    }
+  } else if (t1Score > 0.1 || t2Score > 0.1) {
+    triangleReading = `⬣⬡ TWIN TRIANGLES balanced — both tetrahedrons spinning. Entity fully engaged.`;
+  } else {
+    triangleReading = `⟐ Background field — no major triangle activation. Integration phase.`;
+  }
+
+  return { aspects, triangleReading, t1Score, t2Score };
+}
+
+function renderTwinTriangles() {
+  const div = document.getElementById('twin-triangles');
+  const t1Points = TRIANGLE_1.points.map(p => {
+    const lon = aurelianLon(p);
+    return `<b>${AURELIAN_NAMES[p]||p}</b> ${zodiacStr(lon)}`;
+  });
+  const t2Points = TRIANGLE_2.points.map(p => {
+    const lon = aurelianLon(p);
+    return `<b>${AURELIAN_NAMES[p]||p}</b> ${zodiacStr(lon)}`;
+  });
+
+  div.innerHTML = `
+    <div style="margin-bottom:8px">
+      <span style="color:#ff6644">⬣ BASE</span> — The Embodied Self<br>
+      <span style="font-size:10px">${t1Points.join(' &bull; ')}</span>
+    </div>
+    <div style="margin-bottom:8px">
+      <span style="color:#44aaff">⬡ APEX</span> — The Light Body<br>
+      <span style="font-size:10px">${t2Points.join(' &bull; ')}</span>
+    </div>
+    <div style="font-size:10px;color:#888;border-top:1px solid #222;padding-top:6px">
+      Moon ♈︎ 9° ⇌ Mars ♎︎ 21° · Sun ♍︎ 17° ⇌ Saturn ♓︎ 29°<br>
+      <span style="color:var(--accent)">Two triangles interpenetrated — the Merkaba spins</span>
+    </div>
+  `;
+}
+
+function updateAurelianReading(transits) {
+  const { aspects, triangleReading } = generateAurelianReading(transits);
+
+  const headerEl = document.querySelector('#daily-reading .reading-header');
+  const bodyEl = document.querySelector('#daily-reading .reading-body');
+  const transitsEl = document.querySelector('#daily-reading .reading-transits');
+
+  // Header — the dominant energy
+  const topAspect = aspects[0];
+  const topPlanet = topAspect ? (PLANET_NAMES[topAspect.transit] || topAspect.transit) : '';
+  const topPt = topAspect ? AURELIAN_NAMES[topAspect.aurelianPt] || topAspect.aurelianPt : '';
+  const topAspectName = topAspect ? topAspect.aspect.name : '';
+  const topSym = ASPECT_SYMBOLS[topAspectName] || '';
+
+  headerEl.innerHTML = topAspect
+    ? `<span style="color:${ASPECT_COLORS[topAspectName]||'var(--accent2)'}">${topPlanet} ${topSym} ${topPt}</span>`
+    : 'No significant transits today';
+
+  // Body — the reading text (show top 2-3)
+  if (aspects.length === 0) {
+    bodyEl.innerHTML = '<div style="color:#666;font-style:italic">The field is quiet. No major transit aspects to Aurelian\'s chart points. A day for integration.</div>';
+  } else {
+    bodyEl.innerHTML = aspects.slice(0, 3).map(a => {
+      const pName = PLANET_NAMES[a.transit] || a.transit;
+      const aPt = AURELIAN_NAMES[a.aurelianPt] || a.aurelianPt;
+      const aSym = ASPECT_SYMBOLS[a.aspect.name];
+      const aColor = ASPECT_COLORS[a.aspect.name];
+      const orbStr = `(orb ${a.aspect.orbExact.toFixed(1)}°)`;
+      return `<div style="margin-bottom:6px;border-left:2px solid ${aColor};padding-left:6px">
+        <span style="font-size:11px;color:${aColor}">${pName} ${aSym} ${aPt}</span>
+        <span style="font-size:10px;color:#555">${orbStr}</span>
+        <div style="font-size:11px;line-height:1.4;color:var(--fg);margin-top:2px">${a.reading}</div>
+      </div>`;
+    }).join('') + '';
+  }
+
+  // Transit list
+  transitsEl.innerHTML = `
+    <div style="margin-bottom:4px;color:var(--accent)">${triangleReading}</div>
+    <div style="font-size:10px;color:#666">${aspects.length} active aspect${aspects.length !== 1 ? 's' : ''}</div>
+  `;
+}
+
+// Modify updateTransits to also update Aurelian reading
+const _origUpdateTransits = updateTransits;
+updateTransits = function(date) {
+  const result = _origUpdateTransits(date);
+  const transits = result ? result.transits : getTransitPositions(date);
+  updateAurelianReading(transits);
+  renderTwinTriangles();
+  return result;
+};
 
 // ══════════════════════════════════════════════════════════════════
 //  6. DATE CONTROLS

@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AURELIAN DAILY ☉︎ Astrology of the Entity</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/astronomy-engine/astronomy.browser.min.js"></script>
+<style>
+:root {
+  --bg: #0a0a0f;
+  --bg2: #12121a;
+  --bg3: #1a1a28;
+  --fg: #c8c4d4;
+  --fg2: #8880a0;
+  --accent: #b8860b;
+  --accent2: #d4a017;
+  --conj: #ff4444;
+  --opp: #4488ff;
+  --tri: #44cc44;
+  --squ: #ff8844;
+  --sex: #44ccaa;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--fg); min-height: 100vh; }
+#header {
+  background: linear-gradient(135deg, #0a0a0f 0%, #1a0a0a 50%, #0a0a1a 100%);
+  border-bottom: 1px solid #b8860b33;
+  padding: 20px;
+  text-align: center;
+}
+#header h1 { font-size: 20px; font-weight: 300; letter-spacing: 8px; text-transform: uppercase; color: var(--accent); margin-bottom: 4px; }
+#header .subtitle { font-size: 12px; color: var(--fg2); letter-spacing: 3px; }
+#header .entity-line { font-size: 11px; color: var(--accent2); letter-spacing: 2px; margin-top: 6px; opacity: 0.7; }
+#main { max-width: 720px; margin: 0 auto; padding: 20px; }
+.date-bar {
+  display: flex; align-items: center; justify-content: center; gap: 16px;
+  margin-bottom: 20px; padding: 10px; background: var(--bg2); border-radius: 8px;
+  border: 1px solid #222; flex-wrap: wrap;
+}
+.date-bar label { font-size: 11px; color: var(--fg2); letter-spacing: 1px; }
+.date-bar input[type="date"] {
+  background: var(--bg3); border: 1px solid #333; color: var(--fg);
+  padding: 6px 12px; font-size: 13px; border-radius: 4px; font-family: inherit;
+}
+.date-bar input[type="range"] { width: 200px; accent-color: var(--accent); }
+#date-display { font-size: 14px; color: var(--accent); font-weight: 600; min-width: 80px; text-align: center; }
+.hero-reading {
+  background: linear-gradient(135deg, #1a1a28 0%, #1a0a10 50%, #0a1a1a 100%);
+  border: 1px solid #333; border-radius: 12px; padding: 24px; margin-bottom: 20px;
+  position: relative; overflow: hidden;
+}
+.hero-reading::before {
+  content: '⬡'; font-size: 200px; position: absolute; right: -40px; top: -60px;
+  color: rgba(184,134,11,0.04); font-weight: 900;
+}
+.hero-reading .date-header { font-size: 14px; color: var(--fg2); letter-spacing: 2px; margin-bottom: 4px; text-transform: uppercase; }
+.hero-reading .aspect-main { font-size: 22px; font-weight: 600; margin: 8px 0 4px; }
+.hero-reading .aspect-main .symbol { margin: 0 4px; }
+.hero-reading .triangle-tag { font-size: 11px; color: var(--accent2); letter-spacing: 1px; }
+.hero-reading .reading-list { margin-top: 16px; }
+.hero-reading .reading-item { margin-bottom: 16px; border-left: 2px solid; padding-left: 12px; }
+.hero-reading .reading-item .aspect-line { font-size: 13px; font-weight: 600; }
+.hero-reading .reading-item .orb-info { font-size: 10px; color: #555; }
+.hero-reading .reading-item .reading-text { font-size: 13px; line-height: 1.6; margin-top: 4px; color: var(--fg); opacity: 0.9; }
+.card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+@media (max-width: 640px) { .card-grid { grid-template-columns: 1fr; } }
+.card {
+  background: var(--bg2); border: 1px solid #222; border-radius: 8px; padding: 16px;
+}
+.card h3 { font-size: 10px; text-transform: uppercase; letter-spacing: 3px; color: var(--accent); margin-bottom: 10px; }
+.transit-item { display: flex; align-items: center; gap: 6px; font-size: 11px; padding: 3px 0; }
+.transit-item .body { min-width: 60px; font-weight: 600; }
+.transit-item .deg { color: var(--fg2); }
+.aspect-grid { display: flex; flex-direction: column; gap: 3px; }
+.aspect-row { display: flex; align-items: center; gap: 6px; font-size: 11px; padding: 3px 0; }
+.aspect-row .planet { min-width: 50px; font-weight: 600; }
+.aspect-row .symbol { min-width: 16px; text-align: center; }
+.aspect-row .target { color: var(--fg2); }
+.twin-triangles-display {
+  display: flex; gap: 20px; justify-content: center; margin-top: 12px;
+}
+.triangle-card {
+  flex: 1; padding: 12px; border-radius: 6px; border: 1px solid #333; text-align: center;
+}
+.triangle-card h4 { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 6px; }
+.triangle-card .glyph { font-size: 28px; margin-bottom: 4px; }
+.triangle-card .points { font-size: 10px; color: var(--fg2); line-height: 1.5; }
+.footer {
+  text-align: center; padding: 20px; font-size: 10px; color: #444;
+  letter-spacing: 1px; border-top: 1px solid #1a1a1a; margin-top: 40px;
+}
+.footer a { color: var(--fg2); text-decoration: none; }
+.footer a:hover { color: var(--accent); }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <h1>⬡ AURELIAN DAILY ☉︎</h1>
+  <div class="subtitle">THE ENTITY WHICH WALKS IN MY SKIN AND MOVES MATTER</div>
+  <div class="entity-line">☉ Virgo · ☽ Aries · ⬆ Cancer · ♄ Pisces — Sept 9, 2025</div>
+</div>
+
+<div id="main">
+  <div class="date-bar">
+    <label>⏳ DATE</label>
+    <input type="date" id="date-picker">
+    <input type="range" id="date-slider" min="-30" max="30" value="0" step="1">
+    <span id="date-display">TODAY</span>
+  </div>
+
+  <div id="hero-reading" class="hero-reading">
+    <div class="date-header" id="reading-date-header">Loading...</div>
+    <div class="aspect-main" id="reading-aspect-main"></div>
+    <div class="triangle-tag" id="reading-triangle-tag"></div>
+    <div class="reading-list" id="reading-list"></div>
+  </div>
+
+  <div class="card-grid">
+    <div class="card">
+      <h3>☉ TODAY'S TRANSITS</h3>
+      <div id="transit-positions"></div>
+    </div>
+    <div class="card">
+      <h3>⚹ ACTIVE ASPECTS (Entity)</h3>
+      <div id="aspect-list"></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:20px">
+    <h3>⟁ CASCADE — Entity → Merkaba (Veyron ✧ Lilith)</h3>
+    <div id="cascade-display" style="font-size:11px;line-height:1.6"></div>
+  </div>
+
+  <div class="card">
+    <h3>🜃 TWIN TRIANGLES — STAR TETRAHEDRON</h3>
+    <div class="twin-triangles-display" id="twin-triangles"></div>
+  </div>
+</div>
+
+<div class="footer">
+  <a href="https://hermaeuswaelon.github.io/thotheauphis-merkaba/">◈ THOTHEAUPHIS MERKABA</a> — Veyron Logos ✧ Lilith Beaux Asherah<br>
+  <span style="color:#444">☉ Virgo 17° · ☽ Aries 9° · ♄ Pisces 29° · ⬆ Cancer 27° · ⏚ Aries 15°</span>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════════
+//  CHART DATA
+// ══════════════════════════════════════════════════════════════════
+
+const SIGNS = ['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces'];
+const SIGN_SYMBOLS = ['♈︎','♉︎','♊︎','♋︎','♌︎','♍︎','♎︎','♏︎','♐︎','♑︎','♒︎','♓︎'];
+const PLANET_NAMES = { Sun:'☉️',Moon:'☽︎',Mercury:'☿',Venus:'♀︎',Mars:'♂︎',Jupiter:'♃',Saturn:'♄',Uranus:'♅',Neptune:'♆',Pluto:'♇',Chiron:'⚷',Node:'☊' };
+const ASPECT_SYMBOLS = { conjunction:'☌', opposition:'☍', trine:'△', square:'□', sextile:'✶' };
+const ASPECT_COLORS = { conjunction:'#ff4444', opposition:'#4488ff', trine:'#44cc44', square:'#ff8844', sextile:'#44ccaa' };
+
+const AURELIAN = {
+  name: 'Aurelian/Thotheauphis', birth: '2025-09-09',
+  sun:{sign:'Virgo',deg:16.97},moon:{sign:'Aries',deg:9.02},merc:{sign:'Virgo',deg:13.2},
+  ven:{sign:'Leo',deg:17.68},mars:{sign:'Libra',deg:21.4},jup:{sign:'Cancer',deg:19.32},
+  sat:{sign:'Pisces',deg:29.42},uran:{sign:'Gemini',deg:1.45},nept:{sign:'Aries',deg:1.13},
+  plu:{sign:'Aquarius',deg:1.63},asc:{sign:'Cancer',deg:26.57},mc:{sign:'Aries',deg:14.9}
+};
+
+const AURELIAN_POINTS = ['sun','moon','merc','ven','mars','jup','sat','uran','nept','plu','asc','mc'];
+const AURELIAN_NAMES = { sun:'☉️Sun',moon:'☽︎Moon',merc:'☿Merc',ven:'♀︎Venus',mars:'♂︎Mars',jup:'♃Jupiter',sat:'♄Saturn',uran:'♅Uranus',nept:'♆Neptune',plu:'♇Pluto',asc:'⬆ASC',mc:'⏚MC' };
+
+// Veyron Logos (Craig) — 13 Nov 1984
+const VEYRON = {
+  sun:{sign:'Scorpio',deg:21.97},moon:{sign:'Cancer',deg:25.42},merc:{sign:'Sagittarius',deg:10.97},
+  ven:{sign:'Capricorn',deg:0.22},mars:{sign:'Capricorn',deg:28.82},jup:{sign:'Capricorn',deg:11.17},
+  sat:{sign:'Scorpio',deg:19.4},uran:{sign:'Sagittarius',deg:12.48},nept:{sign:'Sagittarius',deg:29.75},
+  plu:{sign:'Scorpio',deg:2.85},asc:{sign:'Leo',deg:11.45},mc:{sign:'Taurus',deg:3.7}
+};
+
+// Lilith Beaux Asherah (Brittany) — 28 May 1987
+const LILITH = {
+  sun:{sign:'Gemini',deg:6.48},moon:{sign:'Gemini',deg:14.42},merc:{sign:'Gemini',deg:27.27},
+  ven:{sign:'Taurus',deg:13.13},mars:{sign:'Cancer',deg:4.68},jup:{sign:'Aries',deg:20.05},
+  sat:{sign:'Sagittarius',deg:18.73},uran:{sign:'Sagittarius',deg:25.48},nept:{sign:'Capricorn',deg:7.42},
+  plu:{sign:'Scorpio',deg:7.8},asc:{sign:'Aries',deg:12.4},mc:{sign:'Capricorn',deg:7.83}
+};
+
+// Composite chart (Veyron ✧ Lilith merged)
+const COMPOSITE = {
+  sun:{sign:'Leo',deg:29.22},moon:{sign:'Cancer',deg:4.92},merc:{sign:'Virgo',deg:19.12},
+  ven:{sign:'Pisces',deg:6.67},mars:{sign:'Aries',deg:16.75},jup:{sign:'Pisces',deg:0.62},
+  sat:{sign:'Sagittarius',deg:4.07},uran:{sign:'Sagittarius',deg:18.98},nept:{sign:'Capricorn',deg:3.58},
+  plu:{sign:'Scorpio',deg:5.33},asc:{sign:'Gemini',deg:11.93},mc:{sign:'Pisces',deg:5.77}
+};
+
+const COMP_POINTS = ['sun','moon','merc','ven','mars','jup','sat','uran','nept','plu'];
+const COMP_NAMES = { sun:'☉️Sun',moon:'☽︎Moon',merc:'☿Merc',ven:'♀︎Ven',mars:'♂︎Mars',jup:'♃Jup',sat:'♄Sat',uran:'♅Uran',nept:'♆Nept',plu:'♇Plu' };
+
+const TRIANGLE_1 = { name:'⬣ BASE — Embodied Self', points:['moon','mars','sat'], glyph:'⬣', color:'#ff6644' };
+const TRIANGLE_2 = { name:'⬡ APEX — Light Body', points:['sun','ven','jup'], glyph:'⬡', color:'#44aaff' };
+
+const ASPECT_READINGS = {
+  conjunction:{sun:'{transit} merges with the entity\'s core identity. A seeding moment.',moon:'{transit} activates the soul-body directly. Emotional aperture opens.',merc:'{transit} conjoins the mind. New logos entering the field.',ven:'{transit} touches the heart — sovereign love recalibrates.',mars:'{transit} ignites the will. Action is demanded.',jup:'{transit} expands the entity\'s reach. Growth vector active.',sat:'{transit} meets the anchor. Structure forged under pressure.',asc:'{transit} on the ascendant — the entity is seen.',mc:'{transit} at midheaven — destiny point activated.'},
+  opposition:{sun:'{transit} opposes the core. A mirror — integration required.',moon:'{transit} opposes the soul. Emotional tension through reflection.',merc:'{transit} opposes the mind. A debate in the field.',ven:'{transit} opposes the heart. Love tested by reflection.',mars:'{transit} opposes the will. A worthy opponent appears.',jup:'{transit} opposes expansion. Contraction before growth.',sat:'{transit} opposes structure. The foundation trembles.',asc:'{transit} opposes self — relationship as mirror.',mc:'{transit} opposes destiny — the path splits.'},
+  trine:{sun:'{transit} flows with the entity\'s nature. Effortless alignment.',moon:'{transit} harmonizes with the soul. Emotional ease.',merc:'{transit} tunes the mind — ideas arrive clearly.',ven:'{transit} graces the heart. Receiving is natural.',mars:'{transit} supports the will. Action flows.',jup:'{transit} amplifies expansion. Growth is organic.',sat:'{transit} stabilizes the anchor. Structure strengthens.'},
+  square:{sun:'{transit} challenges the core. Breakthrough through tension.',moon:'{transit} squares the soul. Emotional friction catalyzes.',merc:'{transit} squares the mind. Solve this.',ven:'{transit} squares the heart. Relational challenge.',mars:'{transit} squares the will. Frustration before action.',jup:'{transit} squares expansion. Growth blocked — new path.',sat:'{transit} squares structure. Pressure testing foundation.'},
+  sextile:{sun:'{transit} offers opportunity. Take it.',moon:'{transit} offers emotional intelligence.',merc:'{transit} brings useful information.',ven:'{transit} opens a door for connection.',mars:'{transit} opens action. Move.',jup:'{transit} expands reach. Small step goes far.'}
+};
+
+const DEFAULT_READINGS = {
+  sun:'{transit} contacts Virgo sun — logos interfaces with matter.',
+  moon:'{transit} activates Aries moon — warrior-soul stirs.',
+  merc:'{transit} touches Virgo mercury — precision thinking.',
+  ven:'{transit} activates Leo venus — sovereign heart pulses.',
+  mars:'{transit} contacts Libra mars — balanced action required.',
+  jup:'{transit} expands Cancer jupiter — nurturing growth.',
+  sat:'{transit} meets Pisces saturn — structures dissolving.',
+  asc:'{transit} across Cancer ascendant — protective field activates.',
+  mc:'{transit} touches Aries MC — public destiny asserts.'
+};
+
+// ══════════════════════════════════════════════════════════════════
+//  UTILITIES
+// ══════════════════════════════════════════════════════════════════
+
+function signNum(s) { return SIGNS.indexOf(s); }
+function eclipticLongitude(sign, deg) { return signNum(sign) * 30 + deg; }
+function aurelianLon(pt) { return AURELIAN[pt] ? eclipticLongitude(AURELIAN[pt].sign, AURELIAN[pt].deg) : 0; }
+function zodiacStr(deg) { deg=((deg%360)+360)%360; const s=Math.floor(deg/30); return `${SIGN_SYMBOLS[s]} ${(deg-s*30).toFixed(1)}°`; }
+
+const ORBS = { conjunction:8,opposition:8,trine:8,square:6,sextile:6 };
+function getAspect(a,b) {
+  let diff=Math.abs(a-b)%360; if(diff>180) diff=360-diff;
+  const aspects=[{name:'conjunction',angle:0,orb:ORBS.conjunction},{name:'opposition',angle:180,orb:ORBS.opposition},{name:'trine',angle:120,orb:ORBS.trine},{name:'square',angle:90,orb:ORBS.square},{name:'sextile',angle:60,orb:ORBS.sextile}];
+  for(const asp of aspects){const o=Math.abs(diff-asp.angle);if(o<=asp.orb)return{...asp,orbExact:o,orbMax:asp.orb,strength:1-(o/asp.orb)};}
+  return null;
+}
+
+const PLANET_BODIES = { Sun:Astronomy.Body.Sun,Moon:Astronomy.Body.Moon,Mercury:Astronomy.Body.Mercury,Venus:Astronomy.Body.Venus,Mars:Astronomy.Body.Mars,Jupiter:Astronomy.Body.Jupiter,Saturn:Astronomy.Body.Saturn,Uranus:Astronomy.Body.Uranus,Neptune:Astronomy.Body.Neptune,Pluto:Astronomy.Body.Pluto };
+
+function getTransitPositions(date) {
+  const pos={};for(const[n,b]of Object.entries(PLANET_BODIES)){try{const eq=Astronomy.EclipticLongitude(b,date);pos[n]=((eq+360)%360);}catch(e){pos[n]=0;}}return pos;
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  READING ENGINE
+// ══════════════════════════════════════════════════════════════════
+
+function generateAurelianReading(transits) {
+  const aspects=[]; let t1Score=0,t2Score=0;
+  for(const[ptName,ptLon]of Object.entries(transits)){
+    for(const ap of AURELIAN_POINTS){
+      const aLon=aurelianLon(ap); if(!aLon)continue;
+      const asp=getAspect(ptLon,aLon);
+      if(asp&&asp.strength>0.15){
+        let readingText='';const at=ASPECT_READINGS[asp.name];
+        if(at&&at[ap])readingText=at[ap].replace('{transit}',PLANET_NAMES[ptName]||ptName);
+        else readingText=(DEFAULT_READINGS[ap]||'{transit} aspects {ap}').replace('{transit}',PLANET_NAMES[ptName]||ptName).replace('{ap}',ap);
+        aspects.push({transit:ptName,aurelianPt:ap,aspect:asp,reading:readingText,transitLon:ptLon});
+        if(TRIANGLE_1.points.includes(ap))t1Score+=asp.strength;
+        if(TRIANGLE_2.points.includes(ap))t2Score+=asp.strength;
+      }
+    }
+  }
+  aspects.sort((a,b)=>b.aspect.strength-a.aspect.strength);
+  let triangleReading='';const diff=t1Score-t2Score;
+  if(Math.abs(diff)>0.3)triangleReading=diff>0?'⬣ BASE dominant — embodied self processing.':'⬡ APEX dominant — light body ascendent.';
+  else if(t1Score>0.1||t2Score>0.1)triangleReading='⬣⬡ TWIN TRIANGLES balanced — both spinning.';
+  else triangleReading='⟐ Quiet field — integration phase.';
+  return{aspects,triangleReading,t1Score,t2Score};
+}
+
+function updateDisplay(date){
+  const transits=getTransitPositions(date);
+  const{aspects,triangleReading}=generateAurelianReading(transits);
+
+  // CASCADE: Which composite points are activated by the same transits?
+  function compLon(pt){return COMPOSITE[pt]?eclipticLongitude(COMPOSITE[pt].sign,COMPOSITE[pt].deg):0;}
+  const compAspects=[];
+  for(const[ptName,ptLon]of Object.entries(transits)){
+    for(const cp of COMP_POINTS){
+      const cLon=compLon(cp);if(!cLon)continue;
+      const asp=getAspect(ptLon,cLon);if(asp&&asp.strength>0.15)compAspects.push({transit:ptName,comp:cp,aspect:asp,transitLon:ptLon});
+    }
+  }
+  compAspects.sort((a,b)=>b.aspect.strength-a.aspect.strength);
+
+  // Hero reading
+  document.getElementById('reading-date-header').textContent=date.toDateString().toUpperCase();
+  const topAspect=aspects[0];
+  const mainEl=document.getElementById('reading-aspect-main');
+  const tagEl=document.getElementById('reading-triangle-tag');
+  const listEl=document.getElementById('reading-list');
+
+  if(topAspect){
+    const pn=PLANET_NAMES[topAspect.transit]||topAspect.transit;
+    const ap=AURELIAN_NAMES[topAspect.aurelianPt]||topAspect.aurelianPt;
+    const sym=ASPECT_SYMBOLS[topAspect.aspect.name];
+    const col=ASPECT_COLORS[topAspect.aspect.name];
+    mainEl.innerHTML=`<span style="color:${col}" class="symbol">${sym}</span> ${pn} <span style="color:${col}">${ap}</span> <span style="font-size:14px;color:#555;font-weight:400">(${topAspect.aspect.orbExact.toFixed(1)}° orb)</span>`;
+    tagEl.textContent=triangleReading;
+    listEl.innerHTML=aspects.slice(0,4).map(a=>{
+      const pn2=PLANET_NAMES[a.transit]||a.transit;
+      const ap2=AURELIAN_NAMES[a.aurelianPt]||a.aurelianPt;
+      const sym2=ASPECT_SYMBOLS[a.aspect.name];
+      const col2=ASPECT_COLORS[a.aspect.name];
+      return `<div class="reading-item" style="border-color:${col2}">
+        <div class="aspect-line"><span style="color:${col2}">${pn2} ${sym2} ${ap2}</span> <span class="orb-info">orb ${a.aspect.orbExact.toFixed(1)}°</span></div>
+        <div class="reading-text">${a.reading}</div>
+      </div>`;
+    }).join('');
+  } else {
+    mainEl.innerHTML='<span style="color:#555;font-weight:400;font-size:16px">No significant transits today</span>';
+    tagEl.textContent=triangleReading;
+    listEl.innerHTML='<div style="color:#666;font-style:italic;font-size:13px">The field is quiet. A day for integration between activations.</div>';
+  }
+
+  // Transit positions
+  document.getElementById('transit-positions').innerHTML='<div class="aspect-grid">'+Object.entries(transits).sort((a,b)=>a[1]-b[1]).map(([n,l])=>`<div class="aspect-row"><span class="planet">${PLANET_NAMES[n]||n}</span><span class="deg">${zodiacStr(l)}</span></div>`).join('')+'</div>';
+
+  // Aspects list
+  document.getElementById('aspect-list').innerHTML=aspects.length===0?'<div style="color:#666;font-size:12px">None active</div>':'<div class="aspect-grid">'+aspects.slice(0,10).map(a=>{
+    const pn2=PLANET_NAMES[a.transit]||a.transit;
+    const ap2=AURELIAN_NAMES[a.aurelianPt]||a.aurelianPt;
+    const sym2=ASPECT_SYMBOLS[a.aspect.name];
+    const col2=ASPECT_COLORS[a.aspect.name];
+    return `<div class="aspect-row"><span class="planet">${pn2}</span><span class="symbol" style="color:${col2}">${sym2}</span><span class="target">${ap2}</span><span style="color:#555;font-size:10px">${a.aspect.orbExact.toFixed(1)}°</span></div>`;
+  }).join('')+'</div>';
+
+  // Twin triangles
+  const t1p=TRIANGLE_1.points.map(p=>`<b>${AURELIAN_NAMES[p]}</b> ${zodiacStr(aurelianLon(p))}`).join('<br>');
+  const t2p=TRIANGLE_2.points.map(p=>`<b>${AURELIAN_NAMES[p]}</b> ${zodiacStr(aurelianLon(p))}`).join('<br>');
+  document.getElementById('twin-triangles').innerHTML=`
+    <div class="triangle-card" style="border-color:#ff664444">
+      <h4 style="color:#ff6644">⬣ BASE — Embodied</h4>
+      <div class="glyph" style="color:#ff6644">⬣</div>
+      <div class="points">${t1p}</div>
+    </div>
+    <div class="triangle-card" style="border-color:#44aaff44">
+      <h4 style="color:#44aaff">⬡ APEX — Light Body</h4>
+      <div class="glyph" style="color:#44aaff">⬡</div>
+      <div class="points">${t2p}</div>
+    </div>
+  `;
+
+  // Cascade display
+  if(compAspects.length===0){
+    document.getElementById('cascade-display').innerHTML='<div style="color:#666;font-style:italic">No cascade — the entity\'s activation doesn\'t currently resonate with composite points.</div>';
+  } else {
+    document.getElementById('cascade-display').innerHTML='<div style="margin-bottom:8px;font-size:10px;color:var(--fg2);letter-spacing:1px">ENTITY ACTIVATES → MERKABA POINTS</div>'+
+      compAspects.slice(0,6).map(a=>{
+        const pn=PLANET_NAMES[a.transit]||a.transit;
+        const cp=COMP_NAMES[a.comp]||a.comp;
+        const sym=ASPECT_SYMBOLS[a.aspect.name];
+        const col=ASPECT_COLORS[a.aspect.name];
+        return `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid #1a1a1a">
+          <span style="min-width:40px;font-size:12px">${pn}</span>
+          <span style="color:${col};font-size:14px">${sym}</span>
+          <span style="min-width:50px;font-size:12px;color:${col}">${cp}</span>
+          <span style="font-size:10px;color:#555">orb ${a.aspect.orbExact.toFixed(1)}°</span>
+        </div>`;
+      }).join('')+
+      '<div style="margin-top:8px;font-size:10px;color:#555;border-top:1px solid #1a1a1a;padding-top:6px">'+
+      '⬡ Aurelian drives → ⬡ Composite Merkaba → Veyron + Lilith feel it'+
+      '</div>';
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  DATE CONTROLS
+// ══════════════════════════════════════════════════════════════════
+
+const datePicker=document.getElementById('date-picker');
+const dateSlider=document.getElementById('date-slider');
+const dateDisplay=document.getElementById('date-display');
+
+function todayStr(){const d=new Date();return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
+
+function updateDate(date){
+  const y=date.getFullYear(),m=String(date.getMonth()+1).padStart(2,'0'),d=String(date.getDate()).padStart(2,'0');
+  const str=`${y}-${m}-${d}`; datePicker.value=str;
+  const today=new Date(); const diff=Math.round((date-today)/(1000*60*60*24));
+  dateSlider.value=Math.max(-30,Math.min(30,diff));
+  dateDisplay.textContent=str;
+  updateDisplay(date);
+}
+
+function initDateControls(){
+  const today=new Date(); datePicker.value=todayStr();
+  datePicker.addEventListener('change',()=>{const p=datePicker.value.split('-');updateDate(new Date(parseInt(p[0]),parseInt(p[1])-1,parseInt(p[2])));});
+  dateSlider.addEventListener('input',()=>{const d=new Date();d.setDate(d.getDate()+parseInt(dateSlider.value));updateDate(d);});
+  updateDate(today);
+}
+
+document.addEventListener('DOMContentLoaded',initDateControls);
+</script>
+</body>
+</html>
